@@ -1,104 +1,83 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from 'react';
 
-// Country type
-type Country = {
+interface Country {
+  flag: string;
   name: string;
   capital: string;
   region: string;
   population: number;
-  flag: string;
-};
+}
 
-const App: React.FC = () => {
+function App() {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Country | null>(null);
+  const [search, setSearch] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
 
-  // Fetch countries
   useEffect(() => {
-    axios
-      .get<Country[]>("http://localhost:8080/countries")
-      .then((res) => setCountries(res.data))
-      .catch((err) => console.error(err));
-  }, []);
-
-  // Filtered countries based on search
-  const filtered = countries.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+    fetch(`http://localhost:8080/api/countries?search=${search}`)
+      .then(res => res.json())
+      .then(data => setCountries(data))
+      .catch(err => console.error(err));
+  }, [search]);
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>Countries</h2>
-
-      <input
-        type="text"
-        placeholder="Search country"
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h2>Countries Directory</h2>
+      
+      <input 
+        type="text" 
+        placeholder="Search countries..." 
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ padding: "5px", marginBottom: "10px", width: "200px" }}
+        style={{ padding: '10px', width: '300px', marginBottom: '20px', borderRadius: '5px', border: '1px solid #ccc' }}
       />
 
-      <table
-        style={{ borderCollapse: "collapse", width: "100%" }}
-      >
-        <thead>
+      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid #ddd' }}>
+        {/* ADDED color: '#000' HERE SO THE TEXT IS BLACK ON THE GRAY BACKGROUND */}
+        <thead style={{ backgroundColor: '#f4f4f4', color: '#000' }}>
           <tr>
-            <th style={{ border: "1px solid black", padding: "5px" }}>Flag</th>
-            <th style={{ border: "1px solid black", padding: "5px" }}>Name</th>
-            <th style={{ border: "1px solid black", padding: "5px" }}>Capital</th>
-            <th style={{ border: "1px solid black", padding: "5px" }}>Region</th>
-            <th style={{ border: "1px solid black", padding: "5px" }}>Population</th>
+            <th style={{ padding: '10px' }}>Flag</th>
+            <th style={{ padding: '10px' }}>Name</th>
+            <th style={{ padding: '10px' }}>Capital</th>
+            <th style={{ padding: '10px' }}>Region</th>
+            <th style={{ padding: '10px' }}>Population</th>
           </tr>
         </thead>
-
         <tbody>
-          {filtered.map((c) => (
-            <tr
-              key={c.name}
-              onClick={() => setSelected(c)}
-              style={{ cursor: "pointer" }}
-            >
-              <td style={{ border: "1px solid black", padding: "5px" }}>
-                <img src={c.flag} width={40} alt={c.name} />
-              </td>
-              <td style={{ border: "1px solid black", padding: "5px" }}>{c.name}</td>
-              <td style={{ border: "1px solid black", padding: "5px" }}>{c.capital}</td>
-              <td style={{ border: "1px solid black", padding: "5px" }}>{c.region}</td>
-              <td style={{ border: "1px solid black", padding: "5px" }}>
-                {c.population.toLocaleString()}
-              </td>
+          {countries.map((c, i) => (
+            <tr key={i} onClick={() => setSelectedCountry(c)} style={{ cursor: 'pointer' }}>
+              <td style={{ padding: '10px' }}><img src={c.flag} alt="flag" width="50" /></td>
+              <td style={{ padding: '10px' }}>{c.name}</td>
+              <td style={{ padding: '10px' }}>{c.capital}</td>
+              <td style={{ padding: '10px' }}>{c.region}</td>
+              <td style={{ padding: '10px' }}>{c.population.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {selected && (
-        <div
-          style={{
-            border: "1px solid black",
-            padding: "10px",
-            marginTop: "20px",
-            width: "300px",
-          }}
-        >
-          <h3>{selected.name}</h3>
-          <p>Capital: {selected.capital}</p>
-          <p>Region: {selected.region}</p>
-          <p>Population: {selected.population.toLocaleString()}</p>
-          <img src={selected.flag} width={100} alt={selected.name} />
-          <br />
-          <button
-            style={{ marginTop: "10px", padding: "5px" }}
-            onClick={() => setSelected(null)}
-          >
-            Close
-          </button>
+      {/* Modal Popup */}
+      {selectedCountry && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '10px', minWidth: '350px', textAlign: 'center', color: '#000' }}>
+            <h2>{selectedCountry.name}</h2>
+            <img src={selectedCountry.flag} alt="flag" width="120" style={{ marginBottom: '15px', border: '1px solid #ddd' }} />
+            <p style={{ textAlign: 'left' }}><strong>Capital:</strong> {selectedCountry.capital}</p>
+            <p style={{ textAlign: 'left' }}><strong>Region:</strong> {selectedCountry.region}</p>
+            <p style={{ textAlign: 'left' }}><strong>Population:</strong> {selectedCountry.population.toLocaleString()}</p>
+            <button 
+              onClick={() => setSelectedCountry(null)} 
+              style={{ marginTop: '20px', padding: '10px 20px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}>
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
-};
+}
 
 export default App;
